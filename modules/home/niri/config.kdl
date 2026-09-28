@@ -1,0 +1,199 @@
+prefer-no-csd
+
+input {
+    keyboard {
+        xkb {
+            layout "us"
+        }
+    }
+
+    touchpad {
+        tap
+        natural-scroll
+    }
+}
+
+spawn-at-startup "waybar"
+
+binds {
+    Mod+Shift+Slash { show-hotkey-overlay; }
+
+    Mod+Q { spawn "konsole"; }
+    Mod+R { spawn "wofi" "--show" "drun"; }
+
+	Mod+C { close-window; }
+    Mod+F { maximize-column; }
+    Mod+Shift+F { fullscreen-window; }
+
+    Mod+Right { focus-column-right; }
+    Mod+Left  { focus-column-left; }
+    Mod+Up   { focus-workspace-up; }
+    Mod+Down { focus-workspace-down; }
+    Mod+Alt+Up    { focus-window-up; }
+    Mod+Alt+Down  { focus-window-down; }
+    Mod+Shift+Left  { move-column-left; }
+    Mod+Shift+Right { move-column-right; }
+    Mod+Shift+Alt+Up   { move-window-up; }
+    Mod+Shift+Alt+Down { move-window-down; }
+
+    Print { screenshot; }
+    Mod+Print { screenshot-screen; }
+    Mod+Shift+Print { screenshot-window; }
+
+    Mod+Shift+L { spawn "swaylock"; }
+    Mod+Shift+E { quit; }
+}
+
+// ── theme colors ──────────────────────────────
+//   #9a9599
+//   #d3cdb4
+//   #6a6759
+//   #95927f
+//   #49463d
+//   #afaa96
+//   #908d7c
+// ──────────────────────────────────────────────
+
+layout {
+    background-color "#d3cdb4"
+
+    gaps 12
+
+    focus-ring {
+        width 3
+        active-color "#d3cdb4"
+        inactive-color "#6a6759"
+        urgent-color "#9a9599"
+    }
+
+    border {
+        on
+        width 1
+        active-color "#afaa96"
+        inactive-color "#6a6759"
+        urgent-color "#9a9599"
+    }
+
+    default-column-width {
+        proportion 0.5
+    }
+
+    preset-column-widths {
+        proportion 0.33
+        proportion 0.5
+        proportion 0.67
+        proportion 1.0
+    }
+
+    center-focused-column "on-overflow"
+}
+
+overview {
+    backdrop-color "#6a6759"
+}
+
+// ── window animation ──────────────────────────────
+// ty lemon ur tha bes :3
+animations {
+    window-open {
+            duration-ms 500
+            curve "linear"
+
+            custom-shader r"
+            vec4 open_color(vec3 coords_geo, vec3 size_geo) {
+    float p = niri_clamped_progress;
+    vec2 uv = coords_geo.xy;
+
+    vec3 tc = niri_geo_to_tex * vec3(uv, 1.0);
+    vec4 win = texture2D(niri_tex, tc.st);
+
+    // Equilateral triangle tessellation with zero gaps.
+    //
+    // Method: convert pixel coords into an oblique coordinate system
+    // whose basis vectors are the two edge directions of an equilateral
+    // triangle. floor() in this space gives parallelogram cells, and
+    // the diagonal split gives two equilateral triangles per cell.
+    //
+    // Basis vectors (in pixel space, triangle side length = 1):
+    //   e1 = (1, 0)
+    //   e2 = (0.5, sqrt(3)/2)
+    //
+    // To find oblique coords (a, b) from cartesian (x, y):
+    //   y = b * sqrt(3)/2        =>  b = y * 2/sqrt(3)
+    //   x = a + b * 0.5          =>  a = x - b * 0.5
+
+    float scale = 8.0;
+    float aspect = size_geo.x / size_geo.y;
+
+    // Pixel-space coordinates scaled so one triangle edge = 1 unit.
+    float px = uv.x * scale;
+    float py = uv.y * aspect * scale;
+
+    // Convert to oblique triangle coordinates.
+    float b = py * 1.1547005; // 2.0 / sqrt(3) = 1.1547005
+    float a = px - b * 0.5;
+
+    // Parallelogram cell.
+    float ai = floor(a);
+    float bi = floor(b);
+    float af = a - ai;
+    float bf = b - bi;
+
+    // Diagonal split: af + bf < 1 is one triangle, >= 1 is the other.
+    // This produces alternating ▽△ pattern with no gaps.
+    float upper = step(1.0, af + bf);
+
+    // Random reveal per triangle.
+    float hash = fract(sin(ai * 127.1 + bi * 311.7 + upper * 543.3) * 43758.5453);
+    hash = fract(sin(hash * 958.3 + niri_random_seed * 471.2) * 23421.631);
+    float reveal = step(hash, p);
+
+    return win * reveal;
+}"
+    }
+
+    window-close {
+        duration-ms 500
+        curve "linear"
+
+        custom-shader r"
+    vec4 close_color(vec3 coords_geo, vec3 size_geo) {
+    float p = niri_clamped_progress;
+    vec2 uv = coords_geo.xy;
+
+    vec3 tc = niri_geo_to_tex * vec3(uv, 1.0);
+    vec4 win = texture2D(niri_tex, tc.st);
+
+    float scale = 8.0;
+    float aspect = size_geo.x / size_geo.y;
+
+    float px = uv.x * scale;
+    float py = uv.y * aspect * scale;
+
+    float b = py * 1.1547005; // 2 / sqrt(3)
+    float a = px - b * 0.5;
+
+    float ai = floor(a);
+    float bi = floor(b);
+    float af = a - ai;
+    float bf = b - bi;
+
+    // af + bf < 1: one orientation; otherwise the opposite orientation.
+    float upper = step(1.0, af + bf);
+
+    // Stable randomized disappearance time for this specific triangle.
+    float hash = fract(
+        sin(ai * 127.1 + bi * 311.7 + upper * 543.3) * 43758.5453
+    );
+    hash = fract(
+        sin(hash * 958.3 + niri_random_seed * 471.2) * 23421.631
+    );
+
+    // At p = 0 every triangle is present.
+    // As p approaches 1, triangles vanish when p passes their hash value.
+    float visible = 1.0 - step(hash, p);
+
+    return win * visible;
+}"
+    }
+}
