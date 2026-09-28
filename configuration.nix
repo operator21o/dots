@@ -7,9 +7,9 @@
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⠧⠏⠀⢀⡾⠀⠀⠀⣾⣿⡿⠀⠁⠀⠀⣸⠃⠀⠀⢠⣿⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⡟⡸⠀⠀⣼⠁⠀⠀⣸⣿⣿⢃⠄⠀⠀⢀⡏⠀⠀⠀⣼⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⢣⡇⠀⢰⠇⠀⠀⠀⣿⣿⡏⡼⠀⠀⠀⡾⠁⠀⠀⢰⣿⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⢸⠁⠀⡾⠀⠀⠀⣸⣿⣿⢠⠃⠀⠀⣼⠁⠀⠀⢀⣿⣿⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⡇⢈⣠⠞⠁⠀⠀⢀⣿⣿⡇⠜⠀⢀⡞⠁⠀⠀⠀⣼⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⡇⠈⠁⠀⠀⣤⣤⣾⣿⣿⣀⡐⠖⠋⠀⠀⠀⠀⣼⣿⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⢸⠁⠀⡾⠀⠀⠀⣸⣿⣿⢠⠃⠀⠀⣼⠁⠀⠀⢀⣿⣿⡟⠀⠀⠀⠀⠀⠀⠀this is my⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⡇⢈⣠⠞⠁⠀⠀⢀⣿⣿⡇⠜⠀⢀⡞⠁⠀⠀⠀⣼⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+# ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⡇⠈⠁⠀⠀⣤⣤⣾⣿⣿⣀⡐⠖⠋⠀⠀⠀⠀⣼⣿⡿⠁⠀⠀⠀                operating system!!!!⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣤⣤⣶⣶⣿⣿⣿⣿⣿⣿⣿⣿⠇⠀⠀⠀⠈⠿⠿⠿⢿⣿⣿⣿⡷⠄⠀⠀⠀⣼⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⡿⠿⠛⠛⠋⠉⢉⣩⠍⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⢻⣿⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣶⣿⣿⠿⠛⠉⠁⣀⣤⣴⣶⣾⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⣀⠀⠀⠈⠉⠙⠛⠿⣿⣿⣷⣦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -61,17 +61,8 @@
 {
   imports = [
     ./hardware-configuration.nix
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    ./modules/system/niri.nix
-    ./modules/system/gddm.nix
- #  ./modules/system/ayuz.nix
->>>>>>> 2b85235 (theme stuff and ayuz but it's commented out bc they hate niri)
-=======
     ./modules/system/niri.nix # window manager
     ./modules/system/gddm.nix # login manager
->>>>>>> 16c68e8 (window animation and other stuff idr what i did)
   ];
 
   boot.loader.systemd-boot.enable = true;
@@ -127,27 +118,6 @@
     LC_TIME = "en_US.UTF-8";
   };
 
-<<<<<<< HEAD
-  environment.systemPackages = with pkgs; [
-    home-manager
-    wireshark
-<<<<<<< HEAD
-=======
-    wget
-    git
-    kdePackages.konsole
-
-  # sys info
-    hyfetch
-    fastfetch
-
-  # vpn
-    networkmanager-openvpn
-    openvpn
->>>>>>> 2b85235 (theme stuff and ayuz but it's commented out bc they hate niri)
-  ];
-
-=======
   # user
   users.users."rabbit" = {
     isNormalUser = true;
@@ -163,19 +133,20 @@
   };
 
   # experimental features
->>>>>>> 16c68e8 (window animation and other stuff idr what i did)
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
   ];
 
+  # programs
+  programs.firefox.enable = true;
+  programs.git = {
+    enable = true;
+  };
+
   services.xserver.enable = true;
 
-<<<<<<< HEAD
-  services.displayManager.sddm.enable = true;
-=======
   # plasma
->>>>>>> 16c68e8 (window animation and other stuff idr what i did)
   services.desktopManager.plasma6.enable = true;
 
   services.xserver.xkb = {
@@ -183,10 +154,6 @@
     variant = "";
   };
 
-<<<<<<< HEAD
-  services.printing.enable = true;
-
-=======
   # wireshark
   programs.wireshark = {
     enable = true;
@@ -194,7 +161,6 @@
   };
 
   # audio
->>>>>>> 16c68e8 (window animation and other stuff idr what i did)
   services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
@@ -204,23 +170,6 @@
     pulse.enable = true;
   };
 
-<<<<<<< HEAD
-  # user
-  users.users."rabbit" = {
-    isNormalUser = true;
-    description = "op6o";
-    extraGroups = [
-      "networkmanager"
-      "wheel"
-      "wireshark"
-    ];
-    packages = with pkgs; [
-      kdePackages.kate
-    ];
-  };
-
-  programs.firefox.enable = true;
-=======
   # remove old builds
   nix.optimise = {
     automatic = true;
@@ -237,29 +186,8 @@
     min-free = ${toString (2 * 1024 * 1024 * 1024)}
     max-free = ${toString (10 * 1024 * 1024 * 1024)}
   '';
->>>>>>> 16c68e8 (window animation and other stuff idr what i did)
 
   # don't change this
   system.stateVersion = "26.05"; # don't do it.
 
-programs.git = {
-  enable = true;
-#  lfs.enable = true;
-#  settings = {
-#    user = {
-#    };
-#    init.defaultBranch = "main";
-# };
-		};
-  programs.git = {
-    enable = true;
-    #  lfs.enable = true;
-    #  settings = {
-    #    user = {
-    #      name = "";
-    #      email = "";
-    #    };
-    #    init.defaultBranch = "main";
-    # };
-  };
 }
