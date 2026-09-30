@@ -18,7 +18,7 @@ spawn-at-startup "waybar"
 binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
-    Mod+Q { spawn "konsole"; }
+    Mod+Q { spawn "kitty"; }
     Mod+R { spawn "wofi" "--show" "drun"; }
 
 	Mod+C { close-window; }

@@ -19,7 +19,6 @@
   #    ACCEL_MOUNT_MATRIX=0, 1, 0; 1, 0, 0; 0, 0, 1
   # '';
 
-  
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
     openssl
@@ -29,7 +28,7 @@
     libXi
     libxkbcommon
   ];
-  
+
   environment.systemPackages = with pkgs; [
     wayland
     egl-wayland
@@ -40,7 +39,6 @@
     wofi
     wofi-emoji
     jq
-    swayidle
     wl-clipboard
     qt5.qtwayland
     kdePackages.polkit-kde-agent-1
@@ -49,6 +47,11 @@
     xwayland-satellite
   ];
 
-  # Enable polkit
   security.polkit.enable = true;
+
+  services.logind.settings.Login = {
+    HandleLidSwitch = "suspend";
+    HandleLidSwitchExternalPower = "suspend";
+    HandleLidSwitchDocked = "ignore";
+  };
 }

@@ -56,7 +56,12 @@
 # ⠀⠀⠹⢿⣿⣿⣿⣿⣿⣿⠿⠛⠀⠈⠉⠛⠛⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⣿⣿⡿⠉⠀⠀⠀⠀⠀⠀⣴⣷⣿⣿⣷⣶⣶⣤⣤⣤⣤⣤⣤⣤⣤⣤⣴⣶⣶⣿⣿⣿⣿⠿⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 # ⠀⠀⠀⠀⠈⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⣿⣿⣦⣤⣤⣤⣤⣴⣿⣿⡿⠉⠙⠛⠛⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠛⠛⠋⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 # ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠿⢿⣿⣿⡿⠿⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  inputs,
+  ...
+}:
 
 {
   imports = [
@@ -73,6 +78,10 @@
   boot.initrd.luks.devices."luks-4c67e9ee-a80a-48a5-a882-430b3100f393".device =
     "/dev/disk/by-uuid/4c67e9ee-a80a-48a5-a882-430b3100f393";
 
+  fonts.packages = with pkgs; [
+    nerd-fonts.jetbrains-mono
+  ];
+
   # system packages
   environment.systemPackages = with pkgs; [
     # browser
@@ -87,7 +96,7 @@
     git
 
     # terminal
-    kdePackages.konsole
+    kitty
 
     # sys info
     hyfetch
@@ -98,7 +107,7 @@
     openvpn
   ];
 
- #-- network
+  #-- network
   networking.hostName = "automata";
   networking.networkmanager.enable = true;
 
@@ -125,18 +134,11 @@
     extraGroups = [
       "networkmanager"
       "wheel"
-      "wireshark"
     ];
     packages = with pkgs; [
       kdePackages.kate
     ];
   };
-
-  # experimental features
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
 
   # programs
   programs.firefox.enable = true;
@@ -147,7 +149,7 @@
   services.xserver.enable = true;
 
   # plasma
-  services.desktopManager.plasma6.enable = true;
+  # services.desktopManager.plasma6.enable = true;
 
   services.xserver.xkb = {
     layout = "us";
@@ -182,12 +184,16 @@
     options = "--delete-older-than 14d";
   };
 
-  nix.extraOptions = ''
-    min-free = ${toString (2 * 1024 * 1024 * 1024)}
-    max-free = ${toString (10 * 1024 * 1024 * 1024)}
-  '';
+  nix.settings = {
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+
+    min-free = 1 * 1024 * 1024 * 1024;
+    max-free = 4 * 1024 * 1024 * 1024;
+  };
 
   # don't change this
   system.stateVersion = "26.05"; # don't do it.
-
 }
