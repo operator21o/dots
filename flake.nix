@@ -7,6 +7,11 @@
       url = "path:/etc/nixos/blackbox";
       flake = false;
     };
+    helix-master = {
+      url = "git+https://git.gay/lambdalemon/helix?ref=patchy&shallow=1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    cargo-install.url = "git+https://git.gay/lambdalemon/nix-cargo-install.git";
   };
 
   outputs =

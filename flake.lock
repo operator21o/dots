@@ -13,9 +13,50 @@
         "type": "path"
       }
     },
-    "home-manager": {
+    "cargo-install": {
       "inputs": {
         "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1780004068,
+        "narHash": "sha256-eM/R2nnU+QATUmxqcMtv/g9T8xaqwBmk9fkjUpgccSo=",
+        "ref": "refs/heads/main",
+        "rev": "4ace6611a77cda91fbe817bc86fa0320b76e137d",
+        "revCount": 6,
+        "type": "git",
+        "url": "https://git.gay/lambdalemon/nix-cargo-install.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.gay/lambdalemon/nix-cargo-install.git"
+      }
+    },
+    "helix-master": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": "rust-overlay"
+      },
+      "locked": {
+        "lastModified": 1779742472,
+        "narHash": "sha256-ApWRRX11R93mcobL6M5/R+R0oknc+vWAMpJ8TWv2vos=",
+        "ref": "patchy",
+        "rev": "d25c9854659ceaef882cd496c98ea9b7efc045e7",
+        "shallow": true,
+        "type": "git",
+        "url": "https://git.gay/lambdalemon/helix"
+      },
+      "original": {
+        "ref": "patchy",
+        "shallow": true,
+        "type": "git",
+        "url": "https://git.gay/lambdalemon/helix"
+      }
+    },
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2"
       },
       "locked": {
         "lastModified": 1789765459,
@@ -33,6 +74,22 @@
     },
     "nixpkgs": {
       "locked": {
+        "lastModified": 1779877693,
+        "narHash": "sha256-NOF9NAREhxr50bbBfVcVOq+ArCMSoe8dP79Pk2uyARk=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "4100e830e085863741bc69b156ec4ccd53ab5be0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
         "lastModified": 1788865024,
         "narHash": "sha256-3YkAzvtt4LoE11IcBDzPshIF3fJ0aIoILqE7dAg8CLI=",
         "owner": "NixOS",
@@ -47,7 +104,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_2": {
+    "nixpkgs_3": {
       "locked": {
         "lastModified": 1789749394,
         "narHash": "sha256-cFTsMQz8Hzn8MT49oaeLSHg62tE86NykugCWkeM2ypk=",
@@ -66,8 +123,31 @@
     "root": {
       "inputs": {
         "blackbox": "blackbox",
+        "cargo-install": "cargo-install",
+        "helix-master": "helix-master",
         "home-manager": "home-manager",
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs_3"
+      }
+    },
+    "rust-overlay": {
+      "inputs": {
+        "nixpkgs": [
+          "helix-master",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1775531562,
+        "narHash": "sha256-G83GDxQo6lqO5aeTSD5RFLhnh2g6DzJpSvSju2EjjrQ=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "d8b1b209203665924c81eabf750492530754f27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
       }
     }
   },

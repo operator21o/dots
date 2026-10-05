@@ -3,13 +3,12 @@
   config,
   pkgs,
   inputs,
-  extra-inputs,
-  machine-settings,
   lib,
-  secrets,
   ...
 }:
+# hx --tutor
 let
+  secrets = { openai_key={}; perplexity_key={}; };
   lsp-ai =
     if enable-ai then
       import ./helix/lsp-ai.nix { inherit pkgs lib secrets; }
@@ -102,12 +101,6 @@ let
 
 in
 {
-  assertions = [
-    {
-      assertion = machine-settings.input-settings.helix-master;
-      message = "helix-master must be enabled in input-settings";
-    }
-  ];
 
   home.packages = with pkgs; [
     yazi
@@ -184,7 +177,7 @@ in
 
   programs.helix = lib.recursiveUpdate helixBase {
     enable = true;
-    package = extra-inputs.helix-master.packages."x86_64-linux".default;
+    package = inputs.helix-master.packages."x86_64-linux".default;
 
     themes = {
       matteblack = import ./helix/themes/matteblack.nix;
