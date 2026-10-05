@@ -1,0 +1,550 @@
+diff --git a/crates/lsp-ai/src/utils.rs b/crates/lsp-ai/src/utils.rs
+index cde2987..53a7645 100644
+--- a/crates/lsp-ai/src/utils.rs
++++ b/crates/lsp-ai/src/utils.rs
+@@ -1,4 +1,4 @@
+-use std::path::PathBuf;
++use std::path::{Path, PathBuf};
+ 
+ use anyhow::{anyhow, Context};
+ use lsp_server::ResponseError;
+@@ -48,6 +48,9 @@ pub(crate) fn format_chat_messages(
+ pub(crate) fn format_prompt_in_str(s: &str, prompt: &ContextAndCodePrompt) -> String {
+     s.replace("{CONTEXT}", &prompt.context)
+         .replace("{CODE}", &prompt.code)
++        .replace("{FILE_URI}", &prompt.file_uri)
++        .replace("{FILE_PATH}", &prompt.file_path)
++        .replace("{FILE_NAME}", &prompt.file_name)
+         .replace(
+             "{SELECTED_TEXT}",
+             prompt
+@@ -80,17 +83,33 @@ pub(crate) fn parse_tree(
+         .with_context(|| format!("parsing tree failed for {uri}"))
+ }
+ 
++pub(crate) fn file_path_from_uri(uri: &str) -> String {
++    uri.strip_prefix("file://").unwrap_or(uri).to_string()
++}
++
++pub(crate) fn file_name_from_uri(uri: &str) -> String {
++    let file_path = file_path_from_uri(uri);
++
++    Path::new(&file_path)
++        .file_name()
++        .and_then(|name| name.to_str())
++        .unwrap_or(&file_path)
++        .to_string()
++}
++
++fn display_path_from_uri<'a>(uri: &'a str, root_uri: Option<&str>) -> &'a str {
++    match root_uri {
++        Some(root_uri) if uri.starts_with(root_uri) => &uri[root_uri.chars().count()..],
++        _ => uri,
++    }
++}
++
++pub(crate) fn format_file_header(uri: &str, root_uri: Option<&str>) -> String {
++    format!("--{}--\n", display_path_from_uri(uri, root_uri))
++}
++
+ pub(crate) fn format_file_chunk(uri: &str, excerpt: &str, root_uri: Option<&str>) -> String {
+-    let path = match root_uri {
+-        Some(root_uri) => {
+-            if uri.starts_with(root_uri) {
+-                &uri[root_uri.chars().count()..]
+-            } else {
+-                uri
+-            }
+-        }
+-        None => uri,
+-    };
++    let path = display_path_from_uri(uri, root_uri);
+     format!(
+         r#"--{path}--
+ {excerpt}"#,
+diff --git a/crates/lsp-ai/src/memory_backends/mod.rs b/crates/lsp-ai/src/memory_backends/mod.rs
+index f9dfb8e..4a64c01 100644
+--- a/crates/lsp-ai/src/memory_backends/mod.rs
++++ b/crates/lsp-ai/src/memory_backends/mod.rs
+@@ -5,6 +5,7 @@ use lsp_types::{
+ use serde_json::Value;
+ 
+ use crate::config::{Config, ValidMemoryBackend};
++use crate::utils::{file_name_from_uri, file_path_from_uri};
+ 
+ pub(crate) mod file_store;
+ mod postgresml;
+@@ -37,6 +38,30 @@ pub(crate) struct ContextAndCodePrompt {
+     pub(crate) context: String,
+     pub(crate) code: String,
+     pub(crate) selected_text: Option<String>,
++    pub(crate) file_uri: String,
++    pub(crate) file_path: String,
++    pub(crate) file_name: String,
++}
++
++impl ContextAndCodePrompt {
++    pub(crate) fn new(
++        context: String,
++        code: String,
++        selected_text: Option<String>,
++        file_uri: String,
++    ) -> Self {
++        let file_path = file_path_from_uri(&file_uri);
++        let file_name = file_name_from_uri(&file_uri);
++
++        Self {
++            context,
++            code,
++            selected_text,
++            file_uri,
++            file_path,
++            file_name,
++        }
++    }
+ }
+ 
+ #[derive(Debug)]
+@@ -142,11 +167,12 @@ impl TryFrom<Config> for Box<dyn MemoryBackend + Send + Sync> {
+ #[cfg(test)]
+ impl Prompt {
+     pub(crate) fn default_with_cursor() -> Self {
+-        Self::ContextAndCode(ContextAndCodePrompt {
+-            context: r#"def test_context():\n    pass"#.to_string(),
+-            code: r#"def test_code():\n    <CURSOR>"#.to_string(),
+-            selected_text: None,
+-        })
++        Self::ContextAndCode(ContextAndCodePrompt::new(
++            r#"def test_context():\n    pass"#.to_string(),
++            r#"def test_code():\n    <CURSOR>"#.to_string(),
++            None,
++            "file:///test.py".to_string(),
++        ))
+     }
+ 
+     pub(crate) fn default_fim() -> Self {
+@@ -157,10 +183,11 @@ impl Prompt {
+     }
+ 
+     pub(crate) fn default_without_cursor() -> Self {
+-        Self::ContextAndCode(ContextAndCodePrompt {
+-            context: r#"def test_context():\n    pass"#.to_string(),
+-            code: r#"def test_code():\n    "#.to_string(),
+-            selected_text: None,
+-        })
++        Self::ContextAndCode(ContextAndCodePrompt::new(
++            r#"def test_context():\n    pass"#.to_string(),
++            r#"def test_code():\n    "#.to_string(),
++            None,
++            "file:///test.py".to_string(),
++        ))
+     }
+ }
+diff --git a/crates/lsp-ai/src/config.rs b/crates/lsp-ai/src/config.rs
+index 40621e7..0eef065 100644
+--- a/crates/lsp-ai/src/config.rs
++++ b/crates/lsp-ai/src/config.rs
+@@ -214,10 +214,15 @@ pub(crate) struct FileStore {
+ #[serde(deny_unknown_fields)]
+ pub(crate) struct FileStore {
+     pub(crate) crawl: Option<Crawl>,
++    #[serde(default)]
++    pub(crate) context_files: Vec<String>,
+ }
+ 
+ impl FileStore {
+     pub(crate) fn new_without_crawl() -> Self {
+-        Self { crawl: None }
++        Self {
++            crawl: None,
++            context_files: Vec::new(),
++        }
+     }
+ }
+@@ -469,7 +474,10 @@ impl Config {
+     pub(crate) fn default_with_file_store_without_models() -> Self {
+         Self {
+             config: ValidConfig {
+-                memory: ValidMemoryBackend::FileStore(FileStore { crawl: None }),
++                memory: ValidMemoryBackend::FileStore(FileStore {
++                    crawl: None,
++                    context_files: Vec::new(),
++                }),
+                 models: HashMap::new(),
+                 completion: None,
+                 actions: vec![],
+diff --git a/crates/lsp-ai/src/memory_backends/file_store.rs b/crates/lsp-ai/src/memory_backends/file_store.rs
+index 92f95ca..637dd34 100644
+--- a/crates/lsp-ai/src/memory_backends/file_store.rs
++++ b/crates/lsp-ai/src/memory_backends/file_store.rs
+@@ -3,7 +3,11 @@ use lsp_types::{Range, TextDocumentIdentifier, TextDocumentPositionParams};
+ use parking_lot::{Mutex, RwLock};
+ use ropey::Rope;
+ use serde_json::Value;
+-use std::{collections::HashMap, io::Read};
++use std::{
++    collections::HashMap,
++    io::Read,
++    path::{Path, PathBuf},
++};
+ use tracing::{error, instrument, warn};
+ use tree_sitter::{InputEdit, Point, Tree};
+ 
+@@ -11,7 +15,7 @@ use tree_sitter::{InputEdit, Point, Tree};
+ use crate::{
+     config::{self, Config},
+     crawl::Crawl,
+-    utils::{parse_tree, tokens_to_estimated_characters},
++    utils::{format_file_header, parse_tree, tokens_to_estimated_characters},
+ };
+ 
+ use super::{ContextAndCodePrompt, FIMPrompt, MemoryBackend, MemoryRunParams, Prompt, PromptType};
+@@ -43,6 +47,8 @@ pub(crate) struct FileStore {
+     file_map: RwLock<HashMap<String, File>>,
+     accessed_files: Mutex<IndexSet<String>>,
+     crawl: Option<Mutex<Crawl>>,
++    context_files: Vec<String>,
++    root_uri: Option<String>,
+ }
+ 
+ impl FileStore {
+@@ -62,11 +68,15 @@ impl FileStore {
+             .crawl
+             .take()
+             .map(|x| Mutex::new(Crawl::new(x, config.clone())));
++        let context_files = file_store_config.context_files;
++        let root_uri = config.client_params.root_uri.clone();
+         let s = Self {
+             params: AdditionalFileStoreParams::default(),
+             file_map: RwLock::new(HashMap::new()),
+             accessed_files: Mutex::new(IndexSet::new()),
+             crawl,
++            context_files,
++            root_uri,
+         };
+         if let Err(e) = s.maybe_do_crawl(None) {
+             error!("{e:?}")
+@@ -83,11 +93,15 @@ impl FileStore {
+             .crawl
+             .take()
+             .map(|x| Mutex::new(Crawl::new(x, config.clone())));
++        let context_files = file_store_config.context_files;
++        let root_uri = config.client_params.root_uri.clone();
+         let s = Self {
+             params,
+             file_map: RwLock::new(HashMap::new()),
+             accessed_files: Mutex::new(IndexSet::new()),
+             crawl,
++            context_files,
++            root_uri,
+         };
+         if let Err(e) = s.maybe_do_crawl(None) {
+             error!("{e:?}")
+@@ -150,6 +164,52 @@ impl FileStore {
+         Ok(())
+     }
+ 
++    fn context_file_path_and_uri(&self, context_file: &str) -> Option<(PathBuf, String)> {
++        let path = Path::new(context_file);
++        let path_buf = if path.is_absolute() {
++            path.to_path_buf()
++        } else {
++            let root_uri = self.root_uri.as_ref()?;
++            if !root_uri.starts_with("file://") {
++                return None;
++            }
++            Path::new(&root_uri[7..]).join(path)
++        };
++        let uri = format!("file://{}", path_buf.to_string_lossy());
++        Some((path_buf, uri))
++    }
++
++    fn build_context(&self, max_context: usize) -> String {
++        let max_characters = tokens_to_estimated_characters(max_context);
++        let mut context = String::new();
++
++        for context_file in &self.context_files {
++            let Some((path, uri)) = self.context_file_path_and_uri(context_file) else {
++                continue;
++            };
++            let header = format_file_header(&uri, self.root_uri.as_deref());
++            let remaining = max_characters.saturating_sub(context.chars().count());
++            let available = remaining.saturating_sub(header.chars().count() + 1);
++            if available == 0 {
++                break;
++            }
++
++            match std::fs::read_to_string(&path) {
++                Ok(contents) => {
++                    let excerpt: String = contents.chars().take(available).collect();
++                    context.push_str(&header);
++                    context.push_str(&excerpt);
++                    context.push('\n');
++                }
++                Err(e) => {
++                    warn!("Failed to read context file {}: {e}", path.display());
++                }
++            }
++        }
++
++        context
++    }
++
+     fn get_rope_for_position(
+         &self,
+         position: &TextDocumentPositionParams,
+@@ -168,6 +225,10 @@ impl FileStore {
+             .clone();
+         let mut cursor_index = rope.line_to_char(position.position.line as usize)
+             + position.position.character as usize;
++        let current_document_header = format_file_header(&current_document_uri, None);
++        rope.insert(0, &current_document_header);
++        cursor_index += current_document_header.chars().count();
++
+         // Add to our rope if we need to
+         for file in self
+             .accessed_files
+@@ -179,16 +183,22 @@ impl FileStore {
+             if needed == 0 || !pull_from_multiple_files {
+                 break;
+             }
++            let file_header = format_file_header(file, None);
++            let available = needed.saturating_sub(file_header.chars().count() + 1);
++            if available == 0 {
++                break;
++            }
+             let file_map = self.file_map.read();
+             let r = &file_map.get(file).context("Error file not found")?.rope;
+-            let slice_max = needed.min(r.len_chars() + 1);
++            let slice_max = available.min(r.len_chars());
+             let rope_str_slice = r
+-                .get_slice(0..slice_max - 1)
++                .get_slice(0..slice_max)
+                 .context("Error getting slice")?
+                 .to_string();
+             rope.insert(0, "\n");
+-            rope.insert(0, &rope_str_slice);
+-            cursor_index += slice_max;
++            let file_chunk = format!("{file_header}{rope_str_slice}\n");
++            rope.insert(0, &file_chunk);
++            cursor_index += file_chunk.chars().count() + 1;
+         }
+         Ok((rope, cursor_index))
+     }
+@@ -223,6 +293,7 @@ impl FileStore {
+         params: MemoryRunParams,
+         pull_from_multiple_files: bool,
+     ) -> anyhow::Result<Prompt> {
++        let context = self.build_context(params.max_context);
+         let (mut rope, cursor_index) =
+             self.get_rope_for_position(position, params.max_context, pull_from_multiple_files)?;
+ 
+@@ -240,22 +311,24 @@ impl FileStore {
+                     let rope_slice = rope
+                         .get_slice(start..end + "<CURSOR>".chars().count())
+                         .context("Error getting rope slice")?;
+-                    Prompt::ContextAndCode(ContextAndCodePrompt {
+-                        context: "".to_string(),
+-                        code: rope_slice.to_string(),
+-                        selected_text: None,
+-                    })
++                    Prompt::ContextAndCode(ContextAndCodePrompt::new(
++                        context,
++                        rope_slice.to_string(),
++                        None,
++                        position.text_document.uri.to_string(),
++                    ))
+                 } else {
+                     let start = cursor_index
+                         .saturating_sub(tokens_to_estimated_characters(params.max_context));
+                     let rope_slice = rope
+                         .get_slice(start..cursor_index)
+                         .context("Error getting rope slice")?;
+-                    Prompt::ContextAndCode(ContextAndCodePrompt {
+-                        context: "".to_string(),
+-                        code: rope_slice.to_string(),
+-                        selected_text: None,
+-                    })
++                    Prompt::ContextAndCode(ContextAndCodePrompt::new(
++                        context,
++                        rope_slice.to_string(),
++                        None,
++                        position.text_document.uri.to_string(),
++                    ))
+                 }
+             }
+             PromptType::FIM => {
+@@ -704,7 +716,10 @@ mod tests {
+             .await?;
+         let prompt: ContextAndCodePrompt = prompt.try_into()?;
+         assert_eq!(prompt.context, "");
+-        assert_eq!("Document T", prompt.code);
++        assert_eq!(prompt.file_uri, "file:///filler/");
++        assert_eq!(prompt.file_path, "/filler/");
++        assert_eq!(prompt.file_name, "filler");
++        assert_eq!("--file:///filler/--\nDocument T", prompt.code);
+ 
+         // Test FIM
+         let prompt = file_store
+@@ -723,7 +738,7 @@ mod tests {
+             )
+             .await?;
+         let prompt: FIMPrompt = prompt.try_into()?;
+-        assert_eq!(prompt.prompt, r#"Document T"#);
++        assert_eq!(prompt.prompt, "--file:///filler/--\nDocument T");
+         assert_eq!(
+             prompt.suffix,
+             r#"op
+@@ -763,7 +778,7 @@ mod tests {
+     The end with a trailing new line
+     "#
+         .to_string();
+-        assert_eq!(text, prompt.code);
++        assert_eq!(format!("--file:///filler/--\n{text}"), prompt.code);
+ 
+         // Test multi-file
+         let text_document2 = generate_filler_text_document(
+@@ -800,7 +815,13 @@ mod tests {
+             .await?;
+         let prompt: ContextAndCodePrompt = prompt.try_into()?;
+         assert_eq!(prompt.context, "");
+-        assert_eq!(format!("{}\nDocument T", text_document2.text), prompt.code);
++        assert_eq!(
++            format!(
++                "--file:///filler2--\n{}\n\n--file:///filler/--\nDocument T",
++                text_document2.text
++            ),
++            prompt.code
++        );
+ 
+         Ok(())
+     }
+@@ -832,7 +853,8 @@ mod tests {
+             .await?;
+         let prompt: ContextAndCodePrompt = prompt.try_into()?;
+         assert_eq!(prompt.context, "");
+-        let text = r#"test
++        let text = r#"--file:///filler/--
++test
+ <CURSOR>"#
+             .to_string();
+         assert_eq!(text, prompt.code);
+diff --git a/crates/lsp-ai/src/memory_backends/vector_store.rs b/crates/lsp-ai/src/memory_backends/vector_store.rs
+index f0dc51a..37ee2c1 100644
+--- a/crates/lsp-ai/src/memory_backends/vector_store.rs
++++ b/crates/lsp-ai/src/memory_backends/vector_store.rs
+@@ -726,15 +726,16 @@ impl MemoryBackend for VectorStore {
+         // Reconstruct the prompts
+         Ok(match code {
+             Prompt::ContextAndCode(context_and_code) => {
+-                Prompt::ContextAndCode(ContextAndCodePrompt {
+-                    context: context.to_owned(),
+-                    code: format_file_chunk(
++                Prompt::ContextAndCode(ContextAndCodePrompt::new(
++                    context.to_owned(),
++                    format_file_chunk(
+                         position.text_document.uri.as_ref(),
+                         &context_and_code.code,
+                         self.config.client_params.root_uri.as_deref(),
+                     ),
+-                    selected_text: None,
+-                })
++                    None,
++                    position.text_document.uri.to_string(),
++                ))
+             }
+             Prompt::FIM(fim) => Prompt::FIM(FIMPrompt {
+                 prompt: format!("{context}\n\n{}", fim.prompt),
+diff --git a/crates/lsp-ai/src/memory_backends/postgresml/mod.rs b/crates/lsp-ai/src/memory_backends/postgresml/mod.rs
+index ab3ecd4..aa7c496 100644
+--- a/crates/lsp-ai/src/memory_backends/postgresml/mod.rs
++++ b/crates/lsp-ai/src/memory_backends/postgresml/mod.rs
+@@ -589,15 +589,16 @@ impl MemoryBackend for PostgresML {
+         // Reconstruct the Prompts
+         Ok(match code {
+             Prompt::ContextAndCode(context_and_code) => {
+-                Prompt::ContextAndCode(ContextAndCodePrompt {
+-                    context: context.to_owned(),
+-                    code: format_file_chunk(
++                Prompt::ContextAndCode(ContextAndCodePrompt::new(
++                    context.to_owned(),
++                    format_file_chunk(
+                         position.text_document.uri.as_ref(),
+                         &context_and_code.code,
+                         self.config.client_params.root_uri.as_deref(),
+                     ),
+-                    selected_text: None,
+-                })
++                    None,
++                    position.text_document.uri.to_string(),
++                ))
+             }
+             Prompt::FIM(fim) => Prompt::FIM(FIMPrompt {
+                 prompt: format!("{context}\n\n{}", fim.prompt),
+diff --git a/crates/lsp-ai/src/transformer_worker.rs b/crates/lsp-ai/src/transformer_worker.rs
+index 4e7b420..200d176 100644
+--- a/crates/lsp-ai/src/transformer_worker.rs
++++ b/crates/lsp-ai/src/transformer_worker.rs
+@@ -1001,38 +1001,42 @@ mod tests {
+     fn test_post_process_context_and_code() {
+         let config = config::PostProcess::default();
+ 
+-        let prompt = Prompt::ContextAndCode(ContextAndCodePrompt {
+-            context: "".to_string(),
+-            code: "tt ".to_string(),
+-            selected_text: None,
+-        });
++        let prompt = Prompt::ContextAndCode(ContextAndCodePrompt::new(
++            "".to_string(),
++            "tt ".to_string(),
++            None,
++            "file:///test".to_string(),
++        ));
+         let response = "tt abc".to_string();
+         let new_response = post_process_response(response.clone(), &prompt, &config);
+         assert_eq!(new_response, "abc");
+ 
+-        let prompt = Prompt::ContextAndCode(ContextAndCodePrompt {
+-            context: "".to_string(),
+-            code: "ff".to_string(),
+-            selected_text: None,
+-        });
++        let prompt = Prompt::ContextAndCode(ContextAndCodePrompt::new(
++            "".to_string(),
++            "ff".to_string(),
++            None,
++            "file:///test".to_string(),
++        ));
+         let response = "zz".to_string();
+         let new_response = post_process_response(response.clone(), &prompt, &config);
+         assert_eq!(new_response, "zz");
+ 
+-        let prompt = Prompt::ContextAndCode(ContextAndCodePrompt {
+-            context: "".to_string(),
+-            code: "tt <CURSOR> tt".to_string(),
+-            selected_text: None,
+-        });
++        let prompt = Prompt::ContextAndCode(ContextAndCodePrompt::new(
++            "".to_string(),
++            "tt <CURSOR> tt".to_string(),
++            None,
++            "file:///test".to_string(),
++        ));
+         let response = "tt abc tt".to_string();
+         let new_response = post_process_response(response.clone(), &prompt, &config);
+         assert_eq!(new_response, "abc");
+ 
+-        let prompt = Prompt::ContextAndCode(ContextAndCodePrompt {
+-            context: "".to_string(),
+-            code: "d<CURSOR>d".to_string(),
+-            selected_text: None,
+-        });
++        let prompt = Prompt::ContextAndCode(ContextAndCodePrompt::new(
++            "".to_string(),
++            "d<CURSOR>d".to_string(),
++            None,
++            "file:///test".to_string(),
++        ));
+         let response = "zz".to_string();
+         let new_response = post_process_response(response.clone(), &prompt, &config);
+         assert_eq!(new_response, "zz");

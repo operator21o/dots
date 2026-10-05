@@ -82,6 +82,11 @@
     nerd-fonts.jetbrains-mono
   ];
 
+  # change bash prompt
+  programs.bash.promptInit = ''
+    PS1='\u@\h:\w ❯ '
+  '';
+
   # system packages
   environment.systemPackages = with pkgs; [
     # browser
@@ -193,6 +198,8 @@
     min-free = 1 * 1024 * 1024 * 1024;
     max-free = 4 * 1024 * 1024 * 1024;
   };
+
+services.upower.enable = true;
 
   # don't change this
   system.stateVersion = "26.05"; # don't do it.

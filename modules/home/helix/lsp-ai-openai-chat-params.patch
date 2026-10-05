@@ -1,0 +1,250 @@
+--- a/crates/lsp-ai/src/config.rs
++++ b/crates/lsp-ai/src/config.rs
+@@ -292,6 +292,9 @@ pub(crate) struct OpenAI {
+     pub(crate) completions_endpoint: Option<String>,
+     // The chat endpoint
+     pub(crate) chat_endpoint: Option<String>,
++    // API request/response format. Defaults to chat completions.
++    #[serde(default)]
++    pub(crate) api_format: Option<String>,
+     // The maximum requests per second
+     #[serde(default = "max_requests_per_second_default")]
+     pub(crate) max_requests_per_second: f32,
+--- a/crates/lsp-ai/src/transformer_backends/open_ai/mod.rs
++++ b/crates/lsp-ai/src/transformer_backends/open_ai/mod.rs
+@@ -51,6 +51,7 @@ pub(crate) struct OpenAIRunParams {
+     pub(crate) frequency_penalty: f32,
+     #[serde(default = "temperature_default")]
+     pub(crate) temperature: f32,
++    pub(crate) reasoning_effort: Option<String>,
+ }
+ 
+ pub(crate) struct OpenAI {
+@@ -103,6 +104,30 @@ pub(crate) enum OpenAIChatResponse {
+     Other(HashMap<String, Value>),
+ }
+ 
++#[derive(Deserialize, Serialize)]
++pub(crate) struct OpenAIResponsesContent {
++    pub(crate) text: Option<String>,
++}
++
++#[derive(Deserialize, Serialize)]
++pub(crate) struct OpenAIResponsesOutput {
++    pub(crate) content: Option<Vec<OpenAIResponsesContent>>,
++}
++
++#[derive(Deserialize, Serialize)]
++pub(crate) struct OpenAIValidResponsesResponse {
++    pub(crate) output_text: Option<String>,
++    pub(crate) output: Option<Vec<OpenAIResponsesOutput>>,
++}
++
++#[derive(Deserialize, Serialize)]
++#[serde(untagged)]
++pub(crate) enum OpenAIResponsesResponse {
++    Success(OpenAIValidResponsesResponse),
++    Error(OpenAIError),
++    Other(HashMap<String, Value>),
++}
++
+ impl OpenAI {
+     #[instrument]
+     pub(crate) fn new(configuration: config::OpenAI) -> Self {
+@@ -121,6 +146,21 @@ impl OpenAI {
+             )
+         }
+     }
++
++    fn uses_reasoning_chat_parameters(model: &str) -> bool {
++        model.starts_with("gpt-5")
++            || model.starts_with("gpt-6")
++            || model.starts_with("o1")
++            || model.starts_with("o3")
++            || model.starts_with("o4")
++    }
++
++    fn uses_responses_api(&self) -> bool {
++        matches!(
++            self.configuration.api_format.as_deref(),
++            Some("responses") | Some("response")
++        )
++    }
+ 
+     async fn get_completion(
+         &self,
+@@ -187,19 +226,39 @@ impl OpenAI {
+     ) -> anyhow::Result<String> {
+         let client = reqwest::Client::new();
+         let token = self.get_token()?;
+-        let params = json!({
++        let mut request_params = json!({
+             "model": self.configuration.model,
+-            "max_tokens": params.max_tokens,
+             "n": 1,
+-            "top_p": params.top_p,
+-            "presence_penalty": params.presence_penalty,
+-            "frequency_penalty": params.frequency_penalty,
+-            "temperature": params.temperature,
+             "messages": messages
+         });
++        let request_params_object = request_params
++            .as_object_mut()
++            .expect("chat request parameters must be a JSON object");
++
++        if Self::uses_reasoning_chat_parameters(&self.configuration.model) {
++            request_params_object.insert(
++                "max_completion_tokens".to_string(),
++                json!(params.max_tokens),
++            );
++
++            if let Some(reasoning_effort) = params.reasoning_effort {
++                request_params_object
++                    .insert("reasoning_effort".to_string(), json!(reasoning_effort));
++            }
++        } else {
++            request_params_object.insert("max_tokens".to_string(), json!(params.max_tokens));
++            request_params_object.insert("top_p".to_string(), json!(params.top_p));
++            request_params_object
++                .insert("presence_penalty".to_string(), json!(params.presence_penalty));
++            request_params_object.insert(
++                "frequency_penalty".to_string(),
++                json!(params.frequency_penalty),
++            );
++            request_params_object.insert("temperature".to_string(), json!(params.temperature));
++        }
+         info!(
+             "Calling OpenAI compatible chat API with parameters:\n{}",
+-            serde_json::to_string_pretty(&params).unwrap()
++            serde_json::to_string_pretty(&request_params).unwrap()
+         );
+         let res: OpenAIChatResponse = client
+             .post(
+@@ -211,7 +270,7 @@ impl OpenAI {
+             .bearer_auth(token)
+             .header("Content-Type", "application/json")
+             .header("Accept", "application/json")
+-            .json(&params)
++            .json(&request_params)
+             .send()
+             .await?
+             .json()
+@@ -235,6 +294,105 @@ impl OpenAI {
+         }
+     }
+ 
++    async fn get_responses_chat(
++        &self,
++        messages: Vec<ChatMessage>,
++        params: OpenAIRunParams,
++    ) -> anyhow::Result<String> {
++        let client = reqwest::Client::new();
++        let token = self.get_token()?;
++        let mut instructions = None;
++        let mut input = vec![];
++
++        for message in messages {
++            if instructions.is_none() && message.role == "system" {
++                instructions = Some(message.content);
++            } else if !message.content.trim().is_empty() {
++                input.push(message);
++            }
++        }
++
++        let mut request_params = json!({
++            "model": self.configuration.model,
++            "input": input,
++            "max_output_tokens": params.max_tokens
++        });
++        let request_params_object = request_params
++            .as_object_mut()
++            .expect("responses request parameters must be a JSON object");
++
++        if let Some(instructions) = instructions {
++            request_params_object.insert("instructions".to_string(), json!(instructions));
++        }
++
++        if let Some(reasoning_effort) = params.reasoning_effort {
++            request_params_object.insert(
++                "reasoning".to_string(),
++                json!({
++                    "effort": reasoning_effort
++                }),
++            );
++        }
++
++        info!(
++            "Calling OpenAI compatible responses API with parameters:\n{}",
++            serde_json::to_string_pretty(&request_params).unwrap()
++        );
++        let res: OpenAIResponsesResponse = client
++            .post(
++                self.configuration
++                    .chat_endpoint
++                    .as_ref()
++                    .context("must specify `chat_endpoint` to use responses")?,
++            )
++            .bearer_auth(token)
++            .header("Content-Type", "application/json")
++            .header("Accept", "application/json")
++            .json(&request_params)
++            .send()
++            .await?
++            .json()
++            .await?;
++        info!(
++            "Response from OpenAI compatible responses API:\n{}",
++            serde_json::to_string_pretty(&res).unwrap()
++        );
++        match res {
++            OpenAIResponsesResponse::Success(resp) => {
++                if let Some(output_text) = resp.output_text {
++                    if !output_text.trim().is_empty() {
++                        return Ok(output_text);
++                    }
++                }
++
++                if let Some(output) = resp.output {
++                    for item in output {
++                        if let Some(content) = item.content {
++                            for content_item in content {
++                                if let Some(text) = content_item.text {
++                                    if !text.trim().is_empty() {
++                                        return Ok(text);
++                                    }
++                                }
++                            }
++                        }
++                    }
++                }
++
++                anyhow::bail!("OpenAI compatible responses API returned no text output")
++            }
++            OpenAIResponsesResponse::Error(error) => {
++                anyhow::bail!("making OpenAI responses request: {:?}", error.error.to_string())
++            }
++            OpenAIResponsesResponse::Other(other) => {
++                anyhow::bail!(
++                    "unknown error while making OpenAI responses request: {:?}",
++                    other
++                )
++            }
++        }
++    }
++
+     async fn do_chat_completion(
+         &self,
+         prompt: &Prompt,
+@@ -245,7 +381,11 @@ impl OpenAI {
+             Prompt::ContextAndCode(code_and_context) => match &params.messages {
+                 Some(completion_messages) => {
+                     let messages = format_chat_messages(completion_messages, code_and_context);
+-                    self.get_chat(messages, params).await
++                    if self.uses_responses_api() {
++                        self.get_responses_chat(messages, params).await
++                    } else {
++                        self.get_chat(messages, params).await
++                    }
+                 }
+                 None => {
+                     self.get_completion(&format_prompt(&code_and_context), params)
