@@ -153,9 +153,6 @@
 
   services.xserver.enable = true;
 
-  # plasma
-  # services.desktopManager.plasma6.enable = true;
-
   services.xserver.xkb = {
     layout = "us";
     variant = "";
@@ -199,7 +196,36 @@
     max-free = 4 * 1024 * 1024 * 1024;
   };
 
-services.upower.enable = true;
+  services.upower.enable = true;
+
+  # battery optimization
+  services.power-profiles-daemon.enable = false;
+
+  services.tlp = {
+    enable = true;
+    settings = {
+      CPU_ENERGY_PERF_POLICY_ON_AC = "balance_performance";
+      CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
+      CPU_BOOST_ON_BAT = 0;
+      PLATFORM_PROFILE_ON_AC = "balanced";
+      PLATFORM_PROFILE_ON_BAT = "low-power";
+      PCIE_ASPM_ON_BAT = "powersupersave";
+      RUNTIME_PM_ON_BAT = "auto";
+      WIFI_PWR_ON_BAT = "on";
+      USB_AUTOSUSPEND = 1;
+    };
+  };
+
+  # optimization
+  boot.loader.systemd-boot.configurationLimit = 10; # keeps /boot from filling up
+  boot.tmp.cleanOnBoot = true;
+  services.fstrim.enable = true; # weekly TRIM for the NVMe
+  systemd.services.NetworkManager-wait-online.enable = false; # faster boot
+
+  services.fwupd.enable = true; # firmware updates; check LVFS support for the X1404VA
+
+  nix.settings.auto-optimise-store = true;
+  nix.settings.warn-dirty = false;
 
   # don't change this
   system.stateVersion = "26.05"; # don't do it.

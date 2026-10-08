@@ -3,10 +3,12 @@
 { 
   imports = [
     ./wayland.nix
+    ./niri-battery-keeper.nix
   ];
 
   programs.niri.enable = true;
-
+  services.niri-battery-keeper.enable = true;
+  
   security.polkit.enable = true;
   security.pam.services.swaylock = { };
   services.gnome.gnome-keyring.enable = true;

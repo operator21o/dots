@@ -24,7 +24,7 @@
 {
   imports = [
     ./modules/home/niri.nix
-    (import ./modules/home/helix.nix {enable-ai=false;})
+    (import ./modules/home/helix.nix { enable-ai = false; })
   ];
 
   home.username = "rabbit";
@@ -109,10 +109,34 @@
 
   home.stateVersion = stateVersion;
 
+  # swayidle optimization
   services.swayidle = {
     enable = true;
+    timeouts =
+      let
+        onBat = "sh -c 'grep -q 0 /sys/class/power_supply/A*/online' && ";
+      in
+      [
+        {
+          timeout = 60;
+          command = "${onBat}${pkgs.brightnessctl}/bin/brightnessctl -s set 10%";
+          resumeCommand = "${onBat}${pkgs.brightnessctl}/bin/brightnessctl -r";
+        }
+        {
+          timeout = 120;
+          command = "${pkgs.niri}/bin/niri msg action power-off-monitors";
+        }
+        {
+          timeout = 150;
+          command = "${pkgs.procps}/bin/pgrep -x swaylock || ${pkgs.swaylock}/bin/swaylock -f";
+        }
+        {
+          timeout = 600;
+          command = "${onBat}systemctl suspend";
+        }
+      ];
     events = {
-      before-sleep = "${pkgs.swaylock}/bin/swaylock -f";
+      before-sleep = "${pkgs.procps}/bin/pgrep -x swaylock || ${pkgs.swaylock}/bin/swaylock -f";
     };
   };
 }

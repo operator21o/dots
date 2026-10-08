@@ -12,6 +12,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     cargo-install.url = "git+https://git.gay/lambdalemon/nix-cargo-install.git";
+
+    niri-battery-keeper = {
+      url = "git+https://git.gay/lambdalemon/niri-battery-keeper.git";
+      flake = false;
+    };
+
   };
 
   outputs =

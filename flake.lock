@@ -72,6 +72,22 @@
         "type": "github"
       }
     },
+    "niri-battery-keeper": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791468950,
+        "narHash": "sha256-b/InXOP7/GY6UIljwXL/1WqFUAzk4VDn3FB9uU/6agY=",
+        "ref": "refs/heads/main",
+        "rev": "f5597d00520869bfa67d355bad295bd1d43b040b",
+        "revCount": 37,
+        "type": "git",
+        "url": "https://git.gay/lambdalemon/niri-battery-keeper.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.gay/lambdalemon/niri-battery-keeper.git"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1779877693,
@@ -126,6 +142,7 @@
         "cargo-install": "cargo-install",
         "helix-master": "helix-master",
         "home-manager": "home-manager",
+        "niri-battery-keeper": "niri-battery-keeper",
         "nixpkgs": "nixpkgs_3"
       }
     },

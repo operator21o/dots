@@ -10,14 +10,8 @@
     QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
     SDL_VIDEODRIVER = "wayland,x11";
     XDG_SESSION_TYPE = "wayland";
-    WLR_NO_HARDWARE_CURSORS = "1";
+    #    WLR_NO_HARDWARE_CURSORS = "1";
   };
-
-  hardware.sensor.iio.enable = true;
-  # services.udev.extraHwdb = ''
-  #   sensor:modalias:acpi:INVN6500*:dmi:*svn*ASUSTeK*:*pn*TP300LA*
-  #    ACCEL_MOUNT_MATRIX=0, 1, 0; 1, 0, 0; 0, 0, 1
-  # '';
 
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
@@ -53,5 +47,13 @@
     HandleLidSwitch = "suspend";
     HandleLidSwitchExternalPower = "suspend";
     HandleLidSwitchDocked = "ignore";
+  };
+
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [
+      intel-media-driver
+      vpl-gpu-rt
+    ];
   };
 }
